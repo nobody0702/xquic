@@ -66,9 +66,9 @@ const float xqc_bbr_pacing_rate_margin_percent = 0;
 const float xqc_bbr2_drain_gain = 0.75;
 const float xqc_bbr2_startup_cwnd_gain = 2.885;
 /* keep minrtt valid for 10s if it has not been changed */
-const uint32_t xqc_bbr2_minrtt_win_size_us = 10000000;
+const uint32_t xqc_bbr2_minrtt_win_size_us = 30000000;
 /* probe new minrtt in 2.5s*/
-const uint32_t xqc_bbr2_probertt_win_size_us = 10000000;
+const uint32_t xqc_bbr2_probertt_win_size_us = 30000000;
 const bool xqc_bbr2_extra_ack_in_startup = 1;
 /* 10 packet-timed rtt */
 const uint32_t xqc_bbr2_extra_ack_win_rtt = 5;
@@ -296,8 +296,7 @@ xqc_bbr_init(void *cong_ctl, xqc_sample_t *sampler, xqc_cc_params_t cc_params)
             && cc_params.min_cwnd <= XQC_BBR_MAX_WINDOW 
             ? cc_params.min_cwnd : xqc_bbr_min_cwnd;
         
-        //printf("xqc_bbr_init: initial_congestion_window: %d, min_cwnd: %d\n", bbr->initial_congestion_window, bbr->min_cwnd);
-
+        
         if (cc_params.expect_bw > 0) {
             bbr->enable_expect_bw = TRUE;
             bbr->expect_bw = cc_params.expect_bw;
@@ -860,7 +859,6 @@ static void
 xqc_bbr_reset_cwnd(void *cong_ctl)
 {
     xqc_bbr_t *bbr = (xqc_bbr_t *)cong_ctl;
-    //printf("xqc_bbr_reset_cwnd: %d, min_cwnd: %d\n", bbr->congestion_window, bbr->min_cwnd);
     xqc_bbr_save_cwnd(bbr);
     /* reduce cwnd to the minimal value */
     bbr->congestion_window = bbr->min_cwnd;
@@ -972,7 +970,6 @@ xqc_bbr_set_cwnd(xqc_bbr_t *bbr, xqc_sample_t *sampler)
         bbr->congestion_window = xqc_max(bbr->congestion_window, bbr->min_cwnd);
     }
     if (bbr->mode == BBR_PROBE_RTT) {
-        //printf("xqc_bbr_set_cwnd: %d, probe_rtt_cwnd: %d\n", bbr->congestion_window, xqc_bbr_probe_rtt_cwnd(bbr));
         bbr->congestion_window = xqc_min(bbr->congestion_window, 
                                          xqc_bbr_probe_rtt_cwnd(bbr));
     }

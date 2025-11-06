@@ -224,7 +224,7 @@ xqc_timer_ping_timeout(xqc_timer_type_t type, xqc_usec_t now, void *user_data)
 
     conn->conn_flag |= XQC_CONN_FLAG_PING;
 
-    if (conn->conn_settings.ping_on && conn->conn_type == XQC_CONN_TYPE_CLIENT) {
+    if (conn->conn_settings.ping_on) {
         xqc_timer_set(&conn->conn_timer_manager, XQC_TIMER_PING, now, XQC_PING_TIMEOUT * 1000);
     }
 }
