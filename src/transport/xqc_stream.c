@@ -667,6 +667,13 @@ xqc_create_stream_with_conn(xqc_connection_t *conn, xqc_stream_id_t stream_id,
         }
     }
 
+#ifdef XQC_ENABLE_FEC
+    if (conn && conn->conn_settings.fec_level == XQC_FEC_STREAM_LEVEL 
+        && conn->conn_settings.enable_encode_fec) {
+        stream->stream_fec_ctl.enable_fec = 1;
+    }
+#endif
+
     return stream;
 
 error:

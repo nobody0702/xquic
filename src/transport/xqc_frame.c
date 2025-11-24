@@ -2258,6 +2258,8 @@ xqc_process_repair_frame(xqc_connection_t *conn, xqc_packet_in_t *packet_in)
             }
         }
     }
+    xqc_log(conn->log, XQC_LOG_REPORT, "|quic_fec|xqc_process_repair_frame|block_id:%d|repair_key_size:%d|",
+            tmp_rpr_syb.block_id, tmp_rpr_syb.repair_key_size);
 
     xqc_try_process_fec_decode(conn, tmp_rpr_syb.block_id);
     return XQC_OK;

@@ -312,7 +312,21 @@ xqc_send_repair_packets(xqc_connection_t *conn, xqc_fec_schemes_e scheme, xqc_li
                     xqc_log(conn->log ,XQC_LOG_ERROR, "|quic_fec|generate one repair packet error");
                     continue;
                 }
-
+                xqc_log(conn->log, XQC_LOG_REPORT, 
+                    "|repair packet generated|"
+                    "block_id:%d|repair_idx:%d|bm_mode:%d|"
+                    "src_symbol_num:%d|repair_num:%d|"
+                    "repair_key_size:%d|repair_symbol_size:%d|"
+                    "packet_size:%d|total_repair_sent:%d|",
+                    fss_esi,                                    // block_id (First Source Symbol ESI)
+                    tmp_repair_num,                             // repair_idx (repair payload id)
+                    fec_bm_mode,                                // block mode
+                    conn->fec_ctl->fec_send_symbol_num[fec_bm_mode],  // 源符号数量
+                    repair_num,                                 // 需要的修复符号数量
+                    conn->fec_ctl->fec_send_repair_key[fec_bm_mode][tmp_repair_num].payload_size,  // repair key 大小
+                    conn->fec_ctl->fec_send_repair_symbols_buff[fec_bm_mode][tmp_repair_num].payload_size,  // repair symbol 大小
+                    (int)packet_out->po_used_size,                   // 数据包总大小
+                    (int)conn->fec_ctl->fec_send_repair_num_total); // 累计发送的修复包总数
                 tmp_repair_num++;
                 xqc_send_queue_move_to_head(&packet_out->po_list, prev);
                 prev = &packet_out->po_list;
@@ -473,6 +487,7 @@ xqc_process_fec_protected_packet_moq(xqc_stream_t *stream)
         if (payload_len < 0 || payload_len > XQC_MAX_SYMBOL_SIZE) {
             continue;
         }
+        xqc_log(conn->log, XQC_LOG_REPORT, "|quic_fec|xqc_process_fec_protected_packet_moq|payload_len:%d|", payload_len);
         /* attach sid frame to current packet */
         ret = xqc_write_sid_frame_to_one_packet(conn, packet_out);
         if (ret == -XQC_EFEC_TOLERABLE_ERROR) {
@@ -661,6 +676,8 @@ xqc_fec_ctl_destroy(xqc_fec_ctl_t *fec_ctl)
     xqc_list_for_each_safe(pos, next, &fec_ctl->fec_recv_rpr_syb_list) {
         xqc_fec_rpr_syb_t *symbol = xqc_list_entry(pos, xqc_fec_rpr_syb_t, fec_list);
         xqc_free(symbol->payload);
+        xqc_free(symbol->repair_key);
+        xqc_free(symbol->recv_mask);
         xqc_free(symbol);
     }
 
