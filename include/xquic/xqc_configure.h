@@ -14,4 +14,4 @@
 #define XQC_ENABLE_FEC
 #define XQC_ENABLE_XOR
 /* #undef XQC_ENABLE_RSC */
-/* #undef XQC_ENABLE_PKM */
+#define XQC_ENABLE_PKM

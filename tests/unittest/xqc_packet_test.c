@@ -263,10 +263,14 @@ xqc_test_empty_pkt()
     xqc_int_t ret = xqc_packet_encrypt(cli_tctx.c, po);
     CU_ASSERT(ret == XQC_OK);
 
-    /* server decrypt the Initial pkt */
+    /* server decrypt/process the Initial pkt
+     * datagram < 1200: drop as -XQC_EILLPKT without closing connection
+     * (see xqc_packet_parse_initial; XQC_CONN_ERR intentionally disabled;
+     *  EILLPKT is tolerant via xqc_conn_tolerant_error, so process returns XQC_OK) */
     ret = xqc_conn_process_packet(svr_tctx.c, cli_tctx.c->enc_pkt,
                                   cli_tctx.c->enc_pkt_len, xqc_now());
-    CU_ASSERT(svr_tctx.c->conn_err == TRA_PROTOCOL_VIOLATION);
+    CU_ASSERT(ret == XQC_OK);
+    CU_ASSERT(svr_tctx.c->conn_err == 0);
 
 
     xqc_packet_out_destroy(po);
