@@ -29,6 +29,18 @@ typedef struct xqc_gcc_sensor_s {
     struct xqc_gcc_min_rtt_window_s *min_rtt_win;
 } xqc_gcc_sensor_t;
 
+size_t xqc_gcc_ia_size(void);
+void xqc_gcc_ia_init(xqc_gcc_inter_arrival_t *ia);
+int xqc_gcc_ia_compute_deltas(xqc_gcc_inter_arrival_t *ia,
+    xqc_usec_t send_ts_us, xqc_usec_t recv_ts_us, uint32_t size,
+    xqc_usec_t *send_delta_us, xqc_usec_t *recv_delta_us, uint32_t *size_delta);
+
+size_t xqc_gcc_tl_size(void);
+void xqc_gcc_tl_init(xqc_gcc_trendline_t *tl);
+xqc_gcc_bandwidth_usage_e xqc_gcc_tl_update(xqc_gcc_trendline_t *tl,
+    xqc_usec_t send_delta_us, xqc_usec_t recv_delta_us, int64_t arrival_time_ms);
+double xqc_gcc_tl_get_slope(const xqc_gcc_trendline_t *tl);
+
 size_t xqc_gcc_sensor_size(void);
 
 void xqc_gcc_sensor_init(xqc_gcc_sensor_t *sensor);

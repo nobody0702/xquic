@@ -51,6 +51,14 @@ xqc_gcc_sensor_init(xqc_gcc_sensor_t *sensor)
     sensor->last_usage = XQC_GCC_BW_NORMAL;
     sensor->min_rtt_us = UINT32_MAX;
     sensor->min_rtt_win = calloc(1, sizeof(xqc_gcc_min_rtt_window_t));
+    sensor->ia = calloc(1, xqc_gcc_ia_size());
+    sensor->tl = calloc(1, xqc_gcc_tl_size());
+    if (sensor->ia) {
+        xqc_gcc_ia_init(sensor->ia);
+    }
+    if (sensor->tl) {
+        xqc_gcc_tl_init(sensor->tl);
+    }
 }
 
 void
@@ -268,7 +276,15 @@ xqc_gcc_sensor_maybe_notify(xqc_connection_t *conn, xqc_gcc_sensor_t *sensor,
         report_bps = sensor->last_goodput_bps;
     }
     fb.ack_rate_bps = report_bps;
-    fb.trendline_slope_scaled = 0;
+    {
+        double slope = sensor->tl ? xqc_gcc_tl_get_slope(sensor->tl) : 0.0;
+        if (slope > 1000.0) {
+            slope = 1000.0;
+        } else if (slope < -1000.0) {
+            slope = -1000.0;
+        }
+        fb.trendline_slope_scaled = (int32_t)(slope * 1000.0);
+    }
     fb.timestamp_us = now_us;
 
     conn->conn_settings.gcc_feedback_notify(conn, &conn->scid_set.user_scid, &fb,
@@ -310,6 +326,24 @@ xqc_gcc_sensor_on_ack(xqc_connection_t *conn, xqc_send_ctl_t *send_ctl,
 
     if (sampler->acked > 0) {
         xqc_gcc_sensor_update_ack_rate(sensor, sampler->acked, now_us);
+    }
+
+    if (sensor->ia && sensor->tl && sampler->acked > 0) {
+        xqc_usec_t send_d = 0, recv_d = 0;
+        uint32_t size_d = 0;
+        int got = 0;
+        if (sampler->po_sent_time > 0) {
+            got = xqc_gcc_ia_compute_deltas(sensor->ia, sampler->po_sent_time, now_us,
+                    sampler->acked, &send_d, &recv_d, &size_d);
+        }
+        if (!got && sampler->send_elapse > 0 && sampler->ack_elapse > 0) {
+            send_d = sampler->send_elapse;
+            recv_d = sampler->ack_elapse;
+            got = 1;
+        }
+        if (got && send_d > 0) {
+            xqc_gcc_tl_update(sensor->tl, send_d, recv_d, (int64_t)(now_us / 1000));
+        }
     }
 
     goodput_bps = xqc_gcc_sensor_goodput_bps(sensor, sampler);
